@@ -170,23 +170,46 @@
 
     // ✅ Updated findAnswer() function based on question, keywords, focus, or history
     function findAnswer(input) {
-      const cleaned = input.replace(/[^\u0900-\u097F\s]/g, "").trim();
-      const inputWords = cleaned.split(/\s+/);
-      const inputText = cleaned;
+  const synonyms = {
+    "पीएम": "प्रधानमंत्री",
+    "pm": "प्रधानमंत्री",
+    "minister": "प्रधानमंत्री",
+    "नेता": "प्रधानमंत्री",
+    "देश": "भारत",
+    "city": "राजधानी",
+    "animal": "पशु",
+    "टाइगर": "बाघ"
+  };
 
-      for (let item of data) {
-        const questionMatch = item.prashn.includes(inputText);
-        const focusMatch = item.focus && inputWords.includes(item.focus);
-        const keywordMatch = item.keywords.some(k => inputWords.includes(k));
-        const historyMatch = last12Questions.some(q => q.data && q.data.prashn === item.prashn);
+  // 🧽 Input साफ करें और synonym शब्द बदलें
+  const cleaned = input.replace(/[^\u0900-\u097F\sa-zA-Z]/g, "").toLowerCase().trim();
+  let inputWords = cleaned.split(/\s+/).map(word => {
+    return synonyms[word] || word; // synonym बदलें
+  });
 
-        if (questionMatch || focusMatch || keywordMatch || historyMatch) {
-          return item;
-        }
-      }
+  // ✅ Fuzzy Matching Logic
+  function fuzzyMatch(word1, word2) {
+    return word1.startsWith(word2.slice(0, 3)) || word2.startsWith(word1.slice(0, 3));
+  }
 
-      return null;
+  for (let item of data) {
+    const questionWords = item.prashn.replace(/[^\u0900-\u097F\sa-zA-Z]/g, "").toLowerCase().split(/\s+/);
+    const itemKeywords = item.keywords.map(k => synonyms[k] || k.toLowerCase());
+    const focusWord = synonyms[item.focus] || item.focus.toLowerCase();
+
+    const questionMatch = inputWords.some(iw => questionWords.some(qw => fuzzyMatch(iw, qw)));
+    const keywordMatch = inputWords.some(iw => itemKeywords.some(kw => fuzzyMatch(iw, kw)));
+    const focusMatch = inputWords.some(iw => fuzzyMatch(iw, focusWord));
+
+    const historyMatch = last12Questions.some(q => q.data && q.data.prashn === item.prashn);
+
+    if (questionMatch || keywordMatch || focusMatch || historyMatch) {
+      return item;
     }
+  }
+
+  return null;
+}
 
     function speakAnswer(text, onComplete = null) {
       if ('speechSynthesis' in window) {
