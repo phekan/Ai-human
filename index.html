@@ -166,22 +166,27 @@
       return "माफ कीजिए, इसका उत्तर मेरे पास नहीं है।";
     }
 
-    function findAnswer(input) {
-      const cleaned = input.replace(/[^\u0900-\u097F\s]/g, "").trim();
-      const inputWords = cleaned.split(/\s+/);
+    function wordMatches(inputWords, keyword) {
+  return inputWords.some(word => word.includes(keyword) || keyword.includes(word));
+}
 
-      for (let item of data) {
-        let matchCount = 0;
-        item.keywords.forEach(k => {
-          if (inputWords.includes(k)) matchCount++;
-        });
+function findAnswer(input) {
+  const cleaned = input.replace(/[^\u0900-\u097F\s]/g, "").trim();
+  const inputWords = cleaned.split(/\s+/);
 
-        if (inputWords.includes(item.focus) && matchCount >= item.keywords.length - 3) {
-          return item;
-        }
-      }
-      return null;
+  for (let item of data) {
+    let matchCount = 0;
+
+    item.keywords.forEach(k => {
+      if (wordMatches(inputWords, k)) matchCount++;
+    });
+
+    if (wordMatches(inputWords, item.focus) && matchCount >= 1) {
+      return item;
     }
+  }
+  return null;
+}
 
     function speakAnswer(text, onComplete = null) {
       if ('speechSynthesis' in window) {
