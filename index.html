@@ -1,7 +1,8 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
+  <meta name='viewport' content='width=device-width, initial-scale=1'/>
   <title>हिंदी एआई सहायक</title>
   <style>
     body {
@@ -166,27 +167,25 @@
       return "माफ कीजिए, इसका उत्तर मेरे पास नहीं है।";
     }
 
-    function wordMatches(inputWords, keyword) {
-  return inputWords.some(word => word.includes(keyword) || keyword.includes(word));
-}
+    // ✅ Updated findAnswer() function based on question, keywords, focus, or history
+    function findAnswer(input) {
+      const cleaned = input.replace(/[^\u0900-\u097F\s]/g, "").trim();
+      const inputWords = cleaned.split(/\s+/);
+      const inputText = cleaned;
 
-function findAnswer(input) {
-  const cleaned = input.replace(/[^\u0900-\u097F\s]/g, "").trim();
-  const inputWords = cleaned.split(/\s+/);
+      for (let item of data) {
+        const questionMatch = item.prashn.includes(inputText);
+        const focusMatch = item.focus && inputWords.includes(item.focus);
+        const keywordMatch = item.keywords.some(k => inputWords.includes(k));
+        const historyMatch = last12Questions.some(q => q.data && q.data.prashn === item.prashn);
 
-  for (let item of data) {
-    let matchCount = 0;
+        if (questionMatch || focusMatch || keywordMatch || historyMatch) {
+          return item;
+        }
+      }
 
-    item.keywords.forEach(k => {
-      if (wordMatches(inputWords, k)) matchCount++;
-    });
-
-    if (wordMatches(inputWords, item.focus) && matchCount >= 1) {
-      return item;
+      return null;
     }
-  }
-  return null;
-}
 
     function speakAnswer(text, onComplete = null) {
       if ('speechSynthesis' in window) {
